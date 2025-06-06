@@ -4,6 +4,8 @@ This project implements a simplified Lambda Architecture focused on real-time an
 
 ## Architecture Overview
 
+![Architecture](./imgs/architecture.png)
+
 ### Real-Time Processing (Speed Layer)
 
 - **Kafka** ingests stock prices via the `stock_prices` topic.
