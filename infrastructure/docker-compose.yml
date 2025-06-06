@@ -8,13 +8,17 @@ services:
 
   kafka:
     image: confluentinc/cp-kafka:7.4.0
+    ports:
+      - "9092:9092"
     depends_on:
       - zookeeper
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092,PLAINTEXT_INTERNAL://kafka:29092
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,PLAINTEXT_INTERNAL://0.0.0.0:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_INTERNAL:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT_INTERNAL
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
 
   postgres:
@@ -37,46 +41,78 @@ services:
     environment:
       MINIO_ROOT_USER: minioadmin
       MINIO_ROOT_PASSWORD: minioadmin
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
     volumes:
       - ./data/minio:/data
 
   mc:
     image: minio/mc
     depends_on:
-      - minio
+      minio:
+        condition: service_healthy
     entrypoint: >
       /bin/sh -c "
-      sleep 5;
       mc alias set local http://minio:9000 minioadmin minioadmin;
       mc mb -p local/stock-data;
+      mc policy set public local/stock-data;
+      exit 0;
       "
 
   kafka-connect:
-    image: confluentinc/cp-kafka-connect:7.4.0
+    image: confluentinc/cp-kafka-connect:latest
     depends_on:
       - kafka
-      - mc
+      - minio
+    environment:
+      CONNECT_BOOTSTRAP_SERVERS: kafka:29092
+      CONNECT_REST_PORT: 8083
+      CONNECT_GROUP_ID: "connect-cluster"
+      CONNECT_REST_ADVERTISED_HOST_NAME: "kafka-connect"
+      CONNECT_CONFIG_STORAGE_TOPIC: "connect-configs"
+      CONNECT_OFFSET_STORAGE_TOPIC: "connect-offsets"
+      CONNECT_STATUS_STORAGE_TOPIC: "connect-status"
+      CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: 1
+      CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: 1
+      CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: 1
+      CONNECT_KEY_CONVERTER: "org.apache.kafka.connect.storage.StringConverter"
+      CONNECT_VALUE_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
+      CONNECT_INTERNAL_KEY_CONVERTER: "org.apache.kafka.connect.storage.StringConverter"
+      CONNECT_INTERNAL_VALUE_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
+      CONNECT_PLUGIN_PATH: "/usr/share/java,/etc/kafka-connect/plugins"
     ports:
       - "8083:8083"
     volumes:
-      - ./kafka-connect/plugins:/usr/share/java
-      - ./init/register-sink.sh:/register-sink.sh
-    environment:
-      CONNECT_BOOTSTRAP_SERVERS: kafka:9092
-      CONNECT_REST_PORT: 8083
-      CONNECT_GROUP_ID: "connect-group"
-      CONNECT_CONFIG_STORAGE_TOPIC: "_connect-configs"
-      CONNECT_OFFSET_STORAGE_TOPIC: "_connect-offsets"
-      CONNECT_STATUS_STORAGE_TOPIC: "_connect-status"
-      CONNECT_KEY_CONVERTER: "org.apache.kafka.connect.storage.StringConverter"
-      CONNECT_VALUE_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
-      CONNECT_VALUE_CONVERTER_SCHEMAS_ENABLE: "false"
-      CONNECT_KEY_CONVERTER_SCHEMAS_ENABLE: "false"
-      CONNECT_PLUGIN_PATH: "/usr/share/java"
-      AWS_ACCESS_KEY_ID: minioadmin
-      AWS_SECRET_ACCESS_KEY: minioadmin
-    command: >
-      bash -c "sleep 20 && bash /register-sink.sh && /etc/confluent/docker/run"
+      - ./plugins:/etc/kafka-connect/plugins
+
+  register-sink:
+    image: curlimages/curl:latest
+    depends_on:
+      - kafka-connect
+    volumes:
+      - ./init/register-sink.json:/register-sink-config.json
+    entrypoint:
+      - sh
+      - -c
+      - |
+        echo 'Esperando a que Kafka Connect esté completamente listo...'
+        until curl -s -o /dev/null -w "%{http_code}" http://kafka-connect:8083/connectors | grep -q "200"; do
+          echo 'Kafka Connect aún no está listo. Reintentando en 5s...'
+          sleep 5
+        done
+
+        echo 'Registrando el conector S3 si no existe...'
+        if ! curl -s http://kafka-connect:8083/connectors/minio-sink-connector | grep '"name"'; then
+          curl -X POST http://kafka-connect:8083/connectors \
+            -H 'Content-Type: application/json' \
+            -d @/register-sink-config.json
+          echo 'S3 Sink Connector registrado.'
+        else
+          echo 'El conector ya existe. No se vuelve a registrar.'
+        fi
 
 networks:
   default:
