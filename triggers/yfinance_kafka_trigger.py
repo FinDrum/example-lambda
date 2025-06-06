@@ -20,5 +20,5 @@ class KafkaEventListener(EventTrigger):
     def start(self):
         for message in self.consumer:
             event_data = message.value
-            df = pd.DataFrame([event_data])
+            df = pd.DataFrame([event_data.get("payload", {})])
             self.emit(df)
