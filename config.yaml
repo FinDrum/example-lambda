@@ -1,0 +1,5 @@
+triggers:
+  - triggers.yfinance_kafka_trigger.KafkaEventListener
+
+operators:
+  - transformers.postgres_writer.PostgresWriter
