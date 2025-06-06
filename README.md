@@ -79,7 +79,7 @@ platform.start()
 - MinIO Console: http://localhost:9001 (user: `minioadmin`, pass: `minioadmin`)
 - Grafana: http://localhost:3000 (user: `admin`, pass: `admin`)
 
-![Dashboard](./imgs/dasboard.png)
+![Dashboard](./imgs/dashboard.png)
 
 ## Requirements
 
