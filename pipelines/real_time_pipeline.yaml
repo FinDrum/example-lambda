@@ -1,0 +1,14 @@
+event:
+  type: KafkaEventListener
+  config:
+    topic: stock_prices
+    bootstrap_servers: localhost:9092
+    group_id: findrum_listener
+
+pipeline:
+  - id: write_to_postgres
+    operator: PostgresWriter
+    depends_on: KafkaEventListener
+    params:
+      table: realtime_stock
+      db_url: postgresql://postgres:yourpass@localhost:5432/stockdb
