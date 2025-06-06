@@ -93,7 +93,7 @@ services:
     depends_on:
       - kafka-connect
     volumes:
-      - ./init/register-sink.json:/register-sink-config.json
+      - ./init/minio-connector-config.json:/minio-connector-config.json
     entrypoint:
       - sh
       - -c
@@ -108,11 +108,24 @@ services:
         if ! curl -s http://kafka-connect:8083/connectors/minio-sink-connector | grep '"name"'; then
           curl -X POST http://kafka-connect:8083/connectors \
             -H 'Content-Type: application/json' \
-            -d @/register-sink-config.json
+            -d @/minio-connector-config.json
           echo 'S3 Sink Connector registrado.'
         else
           echo 'El conector ya existe. No se vuelve a registrar.'
         fi
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - ./data_grafana:/var/lib/grafana
+    depends_on:
+      - postgres
 
 networks:
   default:

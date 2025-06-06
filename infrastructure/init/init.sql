@@ -6,10 +6,9 @@ CREATE TABLE IF NOT EXISTS realtime_stock (
   volume BIGINT
 );
 
-CREATE TABLE IF NOT EXISTS batch_stock (
-  symbol TEXT,
-  hour TEXT,
-  avg_open DOUBLE PRECISION,
-  avg_close DOUBLE PRECISION,
-  avg_volume DOUBLE PRECISION
+CREATE TABLE IF NOT EXISTS hourly_stock_summary (
+    symbol TEXT,
+    hour TIMESTAMP,
+    avg_close DOUBLE PRECISION,
+    avg_volume DOUBLE PRECISION
 );
