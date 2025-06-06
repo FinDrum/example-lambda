@@ -3,3 +3,6 @@
 
 # infrastructure
 infrastructure/data*
+
+#python
+__pycache__/
