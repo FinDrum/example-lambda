@@ -124,7 +124,7 @@ services:
       - GF_SECURITY_ADMIN_PASSWORD=admin
     volumes:
       - ./data_grafana:/var/lib/grafana
-      - ./init/grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards
+      - ./init/grafana/provisioning:/etc/grafana/provisioning
       - ./init/grafana/dashboards:/etc/grafana/dashboards
     depends_on:
       - postgres

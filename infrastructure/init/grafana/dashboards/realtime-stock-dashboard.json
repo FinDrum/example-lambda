@@ -24,7 +24,7 @@
     {
       "datasource": {
         "type": "grafana-postgresql-datasource",
-        "uid": "ceo4x1lvdui2od"
+        "uid": "stock_pg_uid"
       },
       "fieldConfig": {
         "defaults": {
@@ -152,7 +152,7 @@
   },
   "timepicker": {},
   "timezone": "America/New_York",
-  "title": "Kafka-Architecture",
+  "title": "Real Time Stock Dashboard",
   "uid": "051e9077-92bb-4f3e-834b-cc8c824b43e2",
   "version": 12,
   "weekStart": "monday"

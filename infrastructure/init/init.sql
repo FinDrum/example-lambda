@@ -9,6 +9,5 @@ CREATE TABLE IF NOT EXISTS realtime_stock (
 CREATE TABLE IF NOT EXISTS hourly_stock_summary (
     symbol TEXT,
     hour TIMESTAMP,
-    avg_close DOUBLE PRECISION,
-    avg_volume DOUBLE PRECISION
+    avg_close DOUBLE PRECISION
 );

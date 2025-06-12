@@ -1,0 +1,15 @@
+apiVersion: 1
+
+datasources:
+  - name: PostgreSQL Stock DB
+    type: postgres
+    uid: stock_pg_uid
+    url: postgres:5432
+    user: postgres
+    secureJsonData:
+      password: yourpass
+    database: stockdb
+    isDefault: true
+    editable: true
+    jsonData:
+      sslmode: disable
