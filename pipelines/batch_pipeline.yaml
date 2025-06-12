@@ -1,0 +1,23 @@
+scheduler:
+  type: HourlyScheduler
+  config:
+    hour: 15
+    minute: 17
+
+pipeline:
+  - id: read_raw
+    operator: MinioReader
+    params:
+      bucket: stock-data
+      prefix: raw/stock_prices/
+
+  - id: aggregate
+    operator: AggregatePrices
+    depends_on: read_raw
+
+  - id: write_pg
+    operator: PostgresWriter
+    depends_on: aggregate
+    params:
+      table: hourly_stock_summary
+      db_url: postgresql://postgres:yourpass@localhost:5432/stockdb
