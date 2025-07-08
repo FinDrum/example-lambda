@@ -17,7 +17,7 @@ This project showcases a Lambda Architecture using **FinDrum** for ingesting, pr
 
 ---
 
-## 📦 Batch Processing (Batch Layer)
+## Batch Processing (Batch Layer)
 
 - **Kafka Connect** pushes all incoming events to **MinIO**, preserving them for later analysis.
 - A scheduled FinDrum pipeline runs hourly starting:
