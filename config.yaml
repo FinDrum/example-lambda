@@ -1,5 +1,10 @@
 triggers:
   - triggers.yfinance_kafka_trigger.KafkaEventListener
 
+schedulers:
+  - schedulers.hourly.HourlyScheduler
+
 operators:
-  - transformers.postgres_writer.PostgresWriter
+  - transformers.my_operators.PostgresWriter
+  - transformers.my_operators.MinioReader
+  - transformers.my_operators.AggregatePrices
