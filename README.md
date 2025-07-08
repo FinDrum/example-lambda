@@ -1,28 +1,43 @@
-# Lambda Architecture - Real-Time Stock Analytics
+# Lambda Architecture – Real-Time & Batch Stock Analytics with FinDrum
 
-This project implements a simplified Lambda Architecture focused on real-time analytics for stock data using Kafka, MinIO, PostgreSQL, and Grafana.
+This project showcases a Lambda Architecture using **FinDrum** for ingesting, processing, storing, and visualizing financial data. It combines real-time analytics via Kafka and PostgreSQL with batch processing through scheduled FinDrum pipelines, offering a complete and modular environment for technical stock analysis.
 
 ## Architecture Overview
 
 ![Architecture](./imgs/architecture.png)
 
-### Real-Time Processing (Speed Layer)
+---
+
+## Real-Time Processing (Speed Layer)
 
 - **Kafka** ingests stock prices via the `stock_prices` topic.
-- A listener consumes messages in real time and stores transformed results in PostgreSQL.
-- Real-time metrics (e.g. volume, open price, close price) are updated continuously.
+- A Kafka-based trigger in FinDrum listens for new messages.
+- Upon message arrival the results are saved in a PostgreSQL table (`realtime_stock`).
+- **Grafana** queries PostgreSQL for real-time metrics like volume, open/close prices, etc.
 
-### Object Storage (Data Lake)
+---
 
-- **Kafka Connect** stores every ingested event to **MinIO**, a distributed S3-compatible object store.
-- This enables historical data access for future analytical use cases (e.g. batch processing, ML pipelines).
+## Batch Processing (Batch Layer)
 
-### Visualization
+- **Kafka Connect** pushes all incoming events to **MinIO**, preserving them for later analysis.
+- A scheduled FinDrum pipeline runs hourly starting:
+  - Reads historical data from MinIO.
+  - Aggregates prices (average, volume, etc.).
+  - Saves the summary into a PostgreSQL table (`hourly_stock_summary`).
 
-- **Grafana** connects to PostgreSQL to visualize real-time metrics.
-- Dashboards provide insights such as:
-  - average close price per minute (near-real-time)
-  - trading volume per symbol per minute
+This batch layer is ideal for daily reports or technical indicators like moving averages.
+
+---
+
+## Visualization (Serving Layer)
+
+- **Grafana** connects to PostgreSQL to visualize both real-time and aggregated metrics.
+- Dashboards include:
+  - Minute-by-minute close prices.
+  - Volume trends by stock symbol.
+  - Historical summaries per hour.
+
+---
 
 ## Services
 
@@ -35,6 +50,8 @@ This project implements a simplified Lambda Architecture focused on real-time an
 | PostgreSQL    | 5432       | Structured data persistence |
 | Grafana       | 3000       | Real-time dashboard         |
 
+---
+
 ## How It Works
 
 1. **Stock events** are sent to Kafka (`stock_prices` topic).
@@ -44,7 +61,9 @@ This project implements a simplified Lambda Architecture focused on real-time an
    - Saves results in PostgreSQL.
 4. Grafana connects to PostgreSQL and visualizes the live data.
 
-## Setup
+---
+
+## How to Run
 
 ### 1. Clone the repo and start services
 
@@ -54,7 +73,7 @@ cd Lambda-Architecture/infrastructure
 docker-compose up --build
 ```
 
-### 2. Run the Real-Time Pipeline
+### 2. Run FinDrum Pipelines
 
 Activate your Python environment.
 
@@ -71,6 +90,7 @@ from findrum import Platform
 
 platform = Platform("./config.yaml")
 platform.register_pipeline("./pipelines/realtime_pipeline.yaml")
+platform.register_pipeline("./pipelines/batch_pipeline.yaml")
 platform.start()
 ```
 
@@ -79,7 +99,9 @@ platform.start()
 - MinIO Console: http://localhost:9001 (user: `minioadmin`, pass: `minioadmin`)
 - Grafana: http://localhost:3000 (user: `admin`, pass: `admin`)
 
-![Dashboard](./imgs/dasboard.png)
+### 4. Dashboard Overview
+
+![Architecture](./imgs/dashboard.png)
 
 ## Requirements
 
@@ -88,8 +110,11 @@ platform.start()
 
 ## Future Improvements
 
-- Add a proper batch layer (e.g. Spark jobs from MinIO)
-- Extend monitoring and alerting
+- Automate batch jobs using Spark over MinIO data.
+
+- Integrate Prometheus for extended monitoring.
+
+- Add anomaly detection pipelines using ML.
 
 ---
 
