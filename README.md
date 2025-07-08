@@ -99,6 +99,10 @@ platform.start()
 - MinIO Console: http://localhost:9001 (user: `minioadmin`, pass: `minioadmin`)
 - Grafana: http://localhost:3000 (user: `admin`, pass: `admin`)
 
+### 4. Dashboard Overview
+
+![Architecture](./imgs/dashboard.png)
+
 ## Requirements
 
 - Docker & Docker Compose
